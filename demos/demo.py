@@ -29,11 +29,14 @@ save_dir = "demos/images/figures/complex_masks_inpainting"
 
 method = "fomonms_nms_size_3"
 
-img_idx = 8 # reference image to use
+img_idx = 8 # inital reference image to use
 number_of_image_batch = 1 # number of images to create (batches)
 
+hide_device_switch = False
+used_device = "cuda:0"
+
 # Functions
-def load_model(image_idx, method_name)-> DataLoader | Model:
+def load_model(image_idx, method_name, device)-> DataLoader | Model:
     # find run
     
     file_arg = ""
@@ -91,6 +94,7 @@ def load_model(image_idx, method_name)-> DataLoader | Model:
     )
 
     return loader, M
+
 def random_noise_mask(reference_tensor):
     # random smooth mask
     noise = torch.randn_like(reference_tensor[:, :1])
@@ -176,10 +180,11 @@ def upscale_tensor(tensor, w, h):
         ),
     )
     return x_plot_upscaled
-def process_fomo_original(img_idx, save=False):
+
+def process_fomo_original(img_idx,save=False, device="cuda:0"):
     torch.seed()
 
-    loader, M = load_model(img_idx, "FoMo-NMS")
+    loader, M = load_model(img_idx, "FoMo-NMS", device)
 
     # data
     x_plot, mask_plot = next(iter(loader))
@@ -225,10 +230,10 @@ def process_fomo_original(img_idx, save=False):
         )
 
     return x_plot, out_vis
-def process_outpainting(img_idx, img_mask,display_function,method_name,save=False):
+def process_outpainting(img_idx, img_mask,display_function,method_name,save=False, device="cuda:0"):
     torch.seed()
 
-    loader, M = load_model(img_idx,method_name)
+    loader, M = load_model(img_idx,method_name, device)
 
     # data
     x_plot, mask_plot = next(iter(loader))
@@ -320,19 +325,19 @@ def tensor_to_img(tensor:torch.Tensor): # adapted from save_image() in ./torchvi
 # Specific interface functions
 def process_fomo_gradio_interface(ref_img_idx,input_img):
     inversed_mask = np.abs(255 - input_img['composite'])
-    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"FoMo-NMS")
+    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"FoMo-NMS",device=used_device)
     return tensor_to_img(outpainted_img[0])
 def process_ufu_gradio_interface(ref_img_idx,input_img):
     inversed_mask = np.abs(255 - input_img['composite'])
-    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"UFU")
+    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"UFU",device=used_device)
     return tensor_to_img(outpainted_img[0])
 def process_fu_gradio_interface(ref_img_idx,input_img):
     inversed_mask = np.abs(255 - input_img['composite'])
-    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"FU")
+    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"FU",device=used_device)
     return tensor_to_img(outpainted_img[0])
 def process_vanilla_gradio_interface(ref_img_idx,input_img):
     inversed_mask = np.abs(255 - input_img['composite'])
-    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"Vanilla")
+    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"Vanilla",device=used_device)
     return tensor_to_img(outpainted_img[0])
 
 
@@ -347,16 +352,30 @@ def update_visualization_mode(i):
             visualization_function = border
         case "Overlay" : 
             visualization_function = overlay
+def update_used_device(i):
+    global used_device
+    used_device = "cuda:0" if i == "GPU" else "cpu"
 
 ratio = (2, 2) # upscale ratio
 def update_scale_ratio(i):
     global ratio
     ratio = (i, i)
-
+selected_processing_unit_type = "GPU"
 # Interface
 with gr.Blocks() as demo : 
     gr.HTML(HTML_LOGO_HEADER)
     gr.HTML(HTML_HEADER + HTML_AUTHORS)
+    
+    with gr.Column(scale=1, visible= not hide_device_switch):
+        in_processing_unit_choice = gr.Radio(
+            label="Mode",
+            choices=["GPU", "CPU"],
+            value=selected_processing_unit_type,
+            type="value",
+            elem_classes="radio_group",
+            elem_id="processing_unit_radio_group"
+        )
+    gr.HTML(HTML_SEPARATOR)
     with gr.Row(equal_height=True):
         im_layers = gr.LayerOptions(layers=["Mask"], allow_additional_layers=False)
         im_brushes = gr.Brush(default_size="auto", colors=["rgb(0, 0, 0)"])
@@ -375,7 +394,7 @@ with gr.Blocks() as demo :
 
         out_im_preview = gr.Image(
             type="numpy",
-            label="Output",
+            label="Output - FoMo",
             elem_classes="output-image-fill",
             interactive=False,
             height=350
@@ -414,7 +433,9 @@ with gr.Blocks() as demo :
                 elem_classes="output-image-fill fixed_height_300",
                 interactive=False,
             )
-            
+    
+    gr.HTML(HTML_SEPARATOR)
+          
     with gr.Accordion("Reference Image", True, ):
         with gr.Column():
             out_preview_ref_img = gr.Image(
@@ -491,7 +512,12 @@ with gr.Blocks() as demo :
         outputs=[out_preview_img_Vanilla],
         show_progress=True
     )
+    
+    in_processing_unit_choice.change(
+        fn = update_used_device,
+        inputs=in_processing_unit_choice
+    )
+    
     gr.HTML(HTML_FOOTER)
 # Launch the demo
-
 demo.queue().launch(theme=theme, css=CUSTOM_CSS, head=HTML_CUSTOM_HEAD)

@@ -14,9 +14,6 @@ from pathlib import Path
 import fourier_modules as FM
 from tqdm import tqdm
 
-device='cuda:0'
-
-
 def str2bool(v):
     if isinstance(v, bool):
         return v
@@ -315,6 +312,9 @@ class DS_rot(Dataset):
 
 
 if __name__ == "__main__":
+    
+    device = "cuda:0"
+    
     parser = argparse.ArgumentParser()
     parser.add_argument('--config_file', type=str, help='Path to the saved args.json file')
     parser.add_argument('--dataset_path', default='./images/data/fabric_512/', type=str, help='dataset path')

@@ -39,7 +39,12 @@ theme = gr.themes.Default(
     button_cancel_border_color_hover='hsl(0, 73%, 60%)',
     button_cancel_border_color_hover_dark='hsl(0, 73%, 60%)',
     loader_color="#78216b",
+    block_info_text_color="#797986",
+    block_info_text_color_dark="#bbbbc2",
+    body_text_color_subdued="#797986",
+    body_text_color_subdued_dark="#bbbbc2",
 )
+
 
 HTML_CUSTOM_HEAD = """
     <title>
@@ -66,10 +71,11 @@ HTML_V_SEPARATOR = """
     </div>
 """
 
-HTML_LOGO_HEADER ="""
+HTML_LOGO_HEADER = """
     <header>
         <a href="https://www.greyc.fr/">
-            <img src="https://greycflix.greyc.fr/demo-portal/images/logo-GREYC-dark.svg" style="position: absolute; width: 12em;">
+            <img id="logo-light" src="https://www.greyc.fr/wp-content/uploads/2020/05/Greyc_violet.svg" style="position: absolute; width: 12em; display: block;">
+            <img id="logo-dark" src="https://greycflix.greyc.fr/demo-portal/images/logo-GREYC-dark.svg" style="position: absolute; width: 12em; display: none;">
         </a>
     </header>
 """
@@ -87,7 +93,7 @@ HTML_HEADER = """
 
 HTML_AUTHORS = """
     <div style="text-align: center; padding: 0px;">
-        <p id="authors">Pierrick Chatillon, Julien Rabin, David Tschumperlé</p>
+        <p id="authors">Pierrick Chatillon, Julien Rabin, David Tschumperlé, Mahé Duval</p>
     </div>
 """
 
@@ -99,16 +105,17 @@ footer {visibility: hidden}
     font-size: 48px; 
     font-weight: 700; 
     margin: 0; 
-    color: #ffffff; 
+    color: var(--body-text-color);
     letter-spacing: -0.02em;
 }
 
 #subtitle{
     font-size: 20px; 
-    color: #86868b; 
+    color: var(--body-text-color-subdued);
     margin:0;
     font-weight: 400;
 }
+
 #authors{
     font-size: 15px; 
     color: #86868b; 
@@ -230,5 +237,14 @@ height: -webkit-fill-available;
 }
 [data-testid="imageslider-image"] {
     max-block-size: -webkit-fill-available !important;
+}
+
+@media (prefers-color-scheme: light) {
+    #logo-light { display: block !important; }
+    #logo-dark { display: none !important; }
+}
+@media (prefers-color-scheme: dark) {
+    #logo-light { display: none !important; }
+    #logo-dark { display: block !important; }
 }
 """

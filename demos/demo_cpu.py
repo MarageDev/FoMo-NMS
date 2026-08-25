@@ -1,5 +1,5 @@
 # code from Mahé DUVAL
-# General demo with CPU and GPU switch
+# Demo for CPU
 
 import sys
 from pathlib import Path
@@ -327,19 +327,19 @@ def tensor_to_img(tensor:torch.Tensor): # adapted from save_image() in ./torchvi
 # Specific interface functions
 def process_fomo_gradio_interface(ref_img_idx,input_img):
     inversed_mask = np.abs(255 - input_img['composite'])
-    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"FoMo-NMS",device=used_device)
+    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"FoMo-NMS",device="cpu")
     return tensor_to_img(outpainted_img[0])
 def process_ufu_gradio_interface(ref_img_idx,input_img):
     inversed_mask = np.abs(255 - input_img['composite'])
-    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"UFU",device=used_device)
+    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"UFU",device="cpu")
     return tensor_to_img(outpainted_img[0])
 def process_fu_gradio_interface(ref_img_idx,input_img):
     inversed_mask = np.abs(255 - input_img['composite'])
-    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"FU",device=used_device)
+    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"FU",device="cpu")
     return tensor_to_img(outpainted_img[0])
 def process_vanilla_gradio_interface(ref_img_idx,input_img):
     inversed_mask = np.abs(255 - input_img['composite'])
-    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"Vanilla",device=used_device)
+    original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"Vanilla",device="cpu")
     return tensor_to_img(outpainted_img[0])
 
 
@@ -354,9 +354,6 @@ def update_visualization_mode(i):
             visualization_function = border
         case "Overlay" : 
             visualization_function = overlay
-def update_used_device(i):
-    global used_device
-    used_device = "cuda:0" if i == "GPU" else "cpu"
 
 ratio = (2, 2) # upscale ratio
 def update_scale_ratio(i):
@@ -368,15 +365,6 @@ with gr.Blocks() as demo :
     gr.HTML(HTML_LOGO_HEADER)
     gr.HTML(HTML_HEADER + HTML_AUTHORS)
     
-    with gr.Column(scale=1, visible= not hide_device_switch):
-        in_processing_unit_choice = gr.Radio(
-            label="Mode",
-            choices=["GPU", "CPU"],
-            value= "GPU" if "cuda" in used_device else "CPU" ,
-            type="value",
-            elem_classes="radio_group",
-            elem_id="processing_unit_radio_group"
-        )
     gr.HTML(HTML_SEPARATOR)
     with gr.Row(equal_height=True):
         im_layers = gr.LayerOptions(layers=["Mask"], allow_additional_layers=False)
@@ -513,11 +501,6 @@ with gr.Blocks() as demo :
         inputs=[in_ref_img_idx,in_canvas],
         outputs=[out_preview_img_Vanilla],
         show_progress=True
-    )
-    
-    in_processing_unit_choice.change(
-        fn = update_used_device,
-        inputs=in_processing_unit_choice
     )
     
     gr.HTML(HTML_FOOTER)

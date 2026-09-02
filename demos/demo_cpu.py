@@ -138,6 +138,8 @@ def random_noise_mask(reference_tensor):
     mask_plot = (
         (blurred_noise + 1 * penalization) > 0.75
     ).float()
+    
+
 def load_image_mask(ref_tensor):
     # load mask from file
     if not os.path.exists(MASK_FILE_PATH):
@@ -326,18 +328,29 @@ def tensor_to_img(tensor:torch.Tensor): # adapted from save_image() in ./torchvi
 
 # Specific interface functions
 def process_fomo_gradio_interface(ref_img_idx,input_img):
+    if input_img is None or input_img.get('composite') is None:
+        raise gr.Error("Please draw a mask on the canvas first. Use the brush icon on the left of the canvas.")
     inversed_mask = np.abs(255 - input_img['composite'])
     original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"FoMo-NMS",device="cpu")
     return tensor_to_img(outpainted_img[0])
+
 def process_ufu_gradio_interface(ref_img_idx,input_img):
+    if input_img is None or input_img.get('composite') is None:
+        return None
     inversed_mask = np.abs(255 - input_img['composite'])
     original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"UFU",device="cpu")
     return tensor_to_img(outpainted_img[0])
+
 def process_fu_gradio_interface(ref_img_idx,input_img):
+    if input_img is None or input_img.get('composite') is None:
+        return None
     inversed_mask = np.abs(255 - input_img['composite'])
     original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"FU",device="cpu")
     return tensor_to_img(outpainted_img[0])
+
 def process_vanilla_gradio_interface(ref_img_idx,input_img):
+    if input_img is None or input_img.get('composite') is None:
+        return None
     inversed_mask = np.abs(255 - input_img['composite'])
     original_img, outpainted_img = process_outpainting(ref_img_idx,inversed_mask, visualization_function,"Vanilla",device="cpu")
     return tensor_to_img(outpainted_img[0])
@@ -345,6 +358,7 @@ def process_vanilla_gradio_interface(ref_img_idx,input_img):
 
 def update_ref_img_preview(idx):
     return f"images/data/{idx}/{idx}.png"
+
 ## Globals
 visualization_function = overlay
 def update_visualization_mode(i):
